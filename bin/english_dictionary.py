@@ -1,4 +1,4 @@
-english = {
+english_words = {
     "efficient [ɪˈfɪʃnt]": "эффективный",
     "revision [rɪˈvɪʒən]": "ревизия",
     "provide [prəˈvaɪd]": "обеспечивать",

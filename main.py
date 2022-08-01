@@ -5,6 +5,8 @@ from tkinter import *
 from PIL import ImageTk
 import threading
 
+from bin.english_dictionary import english_words
+
 
 class Main:
 
@@ -44,6 +46,9 @@ class Repeat(Toplevel):
 
     def __init__(self, *args, **kwargs):
         Toplevel.__init__(self, *args, **kwargs)
+        with open('bin/dictionary.json', 'w') as f:
+            json.dump(english_words, f)
+
         self.overrideredirect(True)
         self.attributes('-topmost', 'true')
         self.russian_txt = StringVar()
@@ -92,31 +97,25 @@ class Repeat(Toplevel):
         self.destroy()
 
     def open_words(self):
-        with open('learning.json', 'r') as f:
-            data = json.load(f)
-            while len(data) <= 50:
-                with open('to_learn.json', 'r') as to_learn:
-                    learn_data = json.load(to_learn)
-                    self.key = random.choice(list(learn_data.keys()))
-                    self.value = learn_data[self.key]
-                    data[self.key] = self.value
-                    learn_data.pop(self.key)
-                with open('to_learn.json', 'w') as to_learn:
-                    json.dump(learn_data, to_learn)
-                with open('learning.json', 'w') as file:
-                    json.dump(data, file)
-            self.key = random.choice(list(data.keys()))
-            self.value = data[self.key]
+        with open('bin/currently_learning.json', 'r') as f:
+            current_words = json.load(f)
+            current_words_length = len(current_words)
+
+            if current_words_length < 50:
+                self.add_words_to_learning(current_words_length, current_words)
+
+            self.next_word(current_words)
+
             self.russian_txt.set(self.value)
+
             thread = threading.Thread(target=self.english_translate)
             thread.start()
 
     def save_word(self):
-        with open('learning.json', 'r') as learning:
-            data = json.load(learning)
-            data.pop(self.key)
-        with open('learning.json', 'w') as qwerty:
-            json.dump(data, qwerty)
+        with open('bin/currently_learning.json', 'wr') as currently_learning:
+            words = json.load(currently_learning)
+            words.pop(self.key)
+            json.dump(words, currently_learning)
         self.russian_txt.set('')
         self.english_txt.set('Выучено')
 
@@ -126,6 +125,23 @@ class Repeat(Toplevel):
         sleep(5)
         self.english_txt.set('')
         self.open_words()
+
+    def add_words_to_learning(self, current_words_length, current_words):
+        with open('bin/dictionary.json', 'r+') as f:
+            while current_words_length < 50:
+                dictionary = json.load(f)
+                self.next_word(dictionary)
+                current_words[self.key] = self.value
+                dictionary.pop(self.key)
+                current_words_length += 1
+            json.dump(dictionary, f)
+
+        with open('bin/currently_learning.json', 'r+') as currently_learning:
+            json.dump(current_words, currently_learning)
+
+    def next_word(self, dictionary):
+        self.key = random.choice(list(dictionary.keys()))
+        self.value = dictionary[self.key]
 
 
 if __name__ == '__main__':
